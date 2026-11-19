@@ -1,21 +1,26 @@
-# The manifest. Floorbit reads it before it runs any code: what the plugin may touch (uses), its
-# settings, and what the agent part may send. Field by field: Floorbit's docs/plugins.md.
-id: example                    # rename: lowercase letters, digits, dashes; the repo is floorbit-plugin-<id>
-name: Example reachability
-icon: network
-version: "0.1.0"
+# A pfSense or OPNsense firewall: its gateways (uplinks), its own load and its DHCP pools on the
+# health wall, and the firewall itself in the inventory. Off until turned on under Settings > Plugins.
+# It only reads: give it a read-only API key.
+id: pfsense
+name: pfSense / OPNsense
+icon: firewall
+version: "1.0.0"
 floorbit: ">=0.1,<2"
-description: "The local agent checks that a few services in the hall answer on their TCP port and the dashboard shows how many do."
+description: "A pfSense or OPNsense firewall on the health wall: each gateway (uplink) with its delay and loss, the firewall's CPU and memory, and on pfSense how full each DHCP pool is. The firewall also goes into the inventory, so the firewall view knows it."
 author: Floorbit
-homepage: https://github.com/bitsandbricks-ch/floorbit-plugin-template
-uses: [agent, settings, widgets, storage]
+homepage: https://www.pfsense.org/
+uses: [settings, http, health, inventory]
 settings:
-  - {key: targets, label: Services, type: text, placeholder: "dns = 192.0.2.53:53\ncache = 192.0.2.80:80",
-     help: "One per line: a name = address:port. The agent tries to open a TCP connection to each."}
-  - {key: interval, label: Seconds between checks, type: int, default: 30, min: 5, max: 600}
-widgets:
-  - {id: summary, label: Services up, size: small, refresh: 30}
-agent:
-  sends:
-    # aggregate: counts only. Floorbit and the agent both refuse a payload with an address in it.
-    status: {privacy: aggregate, latest: true}
+  - {key: platform, label: Firewall, type: select, default: pfsense, options: [pfsense, opnsense],
+     help: "pfsense: pfSense CE or Plus with the REST API package (pfrest.org, API v2). opnsense: OPNsense's own API."}
+  - {key: url, label: Firewall URL, type: url, placeholder: "https://fw.example.com",
+     help: "The address of the firewall's web interface."}
+  - {key: api_key, label: API key, type: secret,
+     help: "pfSense: a key from System > REST API > Keys, for a user with read access. OPNsense: the key of a user's API key pair."}
+  - {key: api_secret, label: API secret, type: secret, help: "OPNsense only: the secret of the API key pair."}
+  - {key: name, label: Name, type: string, placeholder: "fw-01",
+     help: "The firewall's name in Floorbit's inventory. Empty: the firewall's own host name."}
+  - {key: pool_warn, label: DHCP pool warning (%), type: int, default: 80,
+     help: "pfSense: a pool this full turns amber; at 95% it turns red."}
+  - {key: verify_ssl, label: Verify TLS certificates, type: bool, default: true,
+     help: "Firewalls ship with a self-signed certificate. Turn it off only on a network you trust."}
